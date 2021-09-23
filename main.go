@@ -24,8 +24,6 @@ func main() {
 
 	// set authentication
 	auth := &http.BasicAuth{
-		Username: "fancel30",
-		Password: "Shippu60",
 		// Username: "username",
 		// Password: "your password",
 	}
