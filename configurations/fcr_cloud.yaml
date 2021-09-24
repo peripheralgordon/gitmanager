@@ -1,0 +1,1377 @@
+models:
+  #cloud file
+  fibra:
+    - fibra-saleability
+    - fibra-customer-identification
+    - fibra-contractualization
+    - fibra-bpm-manager-business-postepay
+  fibra-post-vendita:
+    - fibra-post-vendita
+    - fibra-bpm-postvendita
+  codice-online-cc:
+    - catalog
+    - codice-cc-role-association
+    - codice-cc-merchant-identification
+    - codice-bpm-manager-business-check-cc
+    - codice-upload-documents-online
+    - codice-riepilogo-online
+    - codice-contractualization-online
+    - codice-video-identification-online     
+    - codice-bpm-manager-service-activation-online            
+  # model identifier
+  default:
+    # list of stepIds
+    - catalog
+security:
+  accessTokenHeaderName: unused_actually
+  useridHeaderName: x-userid
+  fiscalIdHeaderName: x-taxcode
+  channelHeaderName: testchannel
+  emailHeaderName: email
+  techuidSchemaValidatorPath: /etc/security-schema/security-schema.json
+  publicKeyFile: /etc/security-keys/mypublickey.pem
+  privateKeyFile: /etc/security-keys/myprivatekey_pkcs8.pem
+  expiryDurationInSecs: 14400
+  protectedUrls:
+  ##    - uri: /NONE/api/v1/funnels/menu/
+  ##      fidParserTemplate: /NONE/api/v1/funnels/menu/{id}
+steps:
+  # MANDATORY, Step IDs
+  - id: feu
+    name: feu
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.FeuTransformation"
+    properties:
+      - name: endpoint
+        value: http://common-api:8080/feu
+      - name: maintitle
+        value: FRONTEND UNICO
+      - name: wishlistnotifier
+        value: u003cspan id="wishlistnotifier" class="badge badge-light"u003eu003c/spanu003e
+      - name: baseApiPath
+        value: /feu/api/v1/
+      - name: levels
+        value: |-
+          {
+            "editEnabledStates": "none",
+            "labels": {
+              "0": "Catalogo prodotti",
+              "60": "Riconoscimento",
+              "100": "Assegnazione ruoli",
+              "200": "Identificazione cliente",
+              "210": "Scheda Assicurativa Cliente",
+              "220": "Configurazione Checkup",
+              "230": "Scheda Assicurativa Cliente Auto",
+              "240": "Configurazione Polizza Auto",
+              "250": "Configurazione Polizza",
+              "260": "Documentazione precontrattuale",
+              "270": "Emissione polizza",
+              "290": "Modalità di pagamento",
+              "300": "Verifiche preliminari",
+              "330": "Adeguata verifica",
+              "370": "Autorizzazione addebito",
+              "400": "Configurazione prodotto",
+              "430": "Compliance",
+              "470": "Addebito contabile",
+              "500": "Creazione pratica",
+              "530": "_HIDDEN_LEVEL_Registrazione",
+              "550": "Attivazione",
+              "600": "Contrattualizzazione",
+              "800": "Attivazione",
+              "900": "_HIDDEN_LEVEL_Riepilogo"
+            }
+          }
+      - name: maincustomer
+        value: ...
+      - name: exituri
+        value: javascript:{var exit;};if (window.document.documentMode){window.location='#exitok';var t = setTimeout(function () {clearTimeout(t);window.close()}, 200);}else{window.location = '/feulandingpage/api/v1/funnels/reset'};
+      - name: homeuri
+        value: /feulandingpage
+      - name: analytics
+        value: u003cscript src="//assets.adobedtm.com/launch-EN592261e36dc14b10a9936e854a4b30db.min.js" asyncu003eu003c/scriptu003e                
+  - id: catalog
+    # MANDATORY, Step Name,  can be anything
+    # (if path is not present, it should be something usable as path)
+    name: catalog
+    gna:
+      #validation: "src/main/resources/schema/catalog-schema.json"
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.catalog.CatalogTransformation"
+      #transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.GenericStepTransformation"
+    # OPTIONAL , Step Description
+    description: Catalog Step
+    level: 0
+    priority: 100
+    # CHANNEL CONFIGURATIONS
+    # MANDATORY, Channel Identifier, must be unique
+    # in the step configuration (at least one channel must be configured)
+    channels:
+      - channel: up
+        # MANDATORY, Default channel if none is present
+        default: true
+        # UI Config Section (per channel)
+        ui:
+          #_OPTIONAL , base template for this step
+          # (default base template must be handled by the funnel UI)
+          basetemplate: base-template
+          # MANDATORY, template for this step
+          template: simplestep
+      - channel: digital
+        default: false
+        ui:
+          basetemplate: base-template
+          template: simplestep
+    # OPTIONAL , array of additional properties
+    properties:
+      # base-template place-holders
+      - name: titletag
+        value: u003ctitleu003eCATALOGOu003c/titleu003e
+      - name: maintitle
+        value: BUONI E LIBRETTI
+      - name: steptitle
+        value: Catalogo
+      # step base URI
+      # endpoint: http://host.docker.internal:8091/catalog
+      - name: endpoint
+        value: http://catalog:8091/catalog
+      - name: enabledeleteproduct
+        value: true
+      # nextStep navigation upon removal
+      #- name: enabledefaultremovecallback
+      #  value: true
+  - id: wishlist
+    name: wishlist
+    description: wishlist
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.WishListTransformation"
+    channels:
+      - channel: up
+        default: false
+        ui:
+          basetemplate: base-template
+          template: simplestep
+      - channel: sdp
+        default: true
+        ui:
+          basetemplate: base-template
+          template: simplestep
+    properties:
+      - name: titletag
+        value: u003ctitleu003eWishListu003c/titleu003e
+      - name: maintitle
+        value: WishList
+      - name: steptitle
+        value: WishList
+      - name: endpoint
+        value: http://step-container:8091/wishlist
+##### Codice STEPS #####
+  - id: codice-cc-role-association
+    name: Associazione Ruoli
+    level: 200
+    priority: 35
+    disallowGoBack: true
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.CommonDataModelTransformation"
+      transformation.config: "/etc/gna-transformations/codice-merchant-identification.json"
+    channels:
+      - channel: digital
+        default: false
+        ui:
+          basetemplate: base-up-template
+          template: simplestep
+      - channel: up
+        default: false
+        ui:
+          basetemplate: base-up-template
+          template: simplestep
+      - channel: sdp
+        default: true
+        ui:
+          basetemplate: base-template
+          template: simplestep
+    properties:
+      - name: titletag
+        value: u003ctitleu003eASSOCIAZIONE RUOLIu003c/titleu003e
+      - name: maintitle
+        value: ASSOCIAZIONE RUOLI
+      - name: steptitle
+        value: ASSOCIAZIONE RUOLI
+      - name: endpoint
+        value: http://merchant-identification-cc-ui-svc.codice-online.svc.cluster.local:8080/codice-cc-merchant-identification/role-association 
+      - name: wsidentifiers
+        value: msgtest
+  - id: codice-cc-merchant-identification
+    name: Identificazione Merchant
+    level: 200
+    priority: 30
+    disallowGoBack: true
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.CommonDataModelTransformation"
+      transformation.config: "/etc/gna-transformations/codice-cc-merchant-identification.json"
+    channels:
+      - channel: digital
+        default: false
+        ui:
+          basetemplate: base-up-template
+          template: simplestep
+      - channel: up
+        default: false
+        ui:
+          basetemplate: base-up-template
+          template: simplestep
+      - channel: sdp
+        default: true
+        ui:
+          basetemplate: base-template
+          template: simplestep
+    properties:
+      - name: titletag
+        value: u003ctitleu003eIDENTIFICAZIONE MERCHANTu003c/titleu003e
+      - name: maintitle
+        value: IDENTIFICAZIONE MERCHANT
+      - name: steptitle
+        value: IDENTIFICAZIONE MERCHANT
+      - name: endpoint
+        value: http://merchant-identification-cc-ui-svc.codice-online.svc.cluster.local:8080/codice-cc-merchant-identification
+      - name: wsidentifiers
+        value: msgtest  
+  - id: codice-bpm-manager-business-check-cc
+    name: Controlli Pregiudizievoli
+    startupApi: http://bpm-manager-business-check-ms-svc.codice-online.svc.cluster.local:8090/bpmmanager/api/v1/funnels/{{fid}}/steps/{{stepid}}
+    fqdnBpm: http://bpm-manager-business-check-ms-svc.codice-online.svc.cluster.local:8090
+    level: 300
+    priority: 40
+    isBpm: true
+    disallowGoBack: true
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.CommonDataModelTransformation"
+      transformation.config: "/etc/gna-transformations/codice-bpm-manager-business-check.json"
+    channels:
+      - channel: digital
+        default: true
+        ui:
+          basetemplate: base-template-myposte
+          template: digitalstep-with-analytics
+    properties:
+      - name: titletag
+        value: u003ctitleu003eControlli pregiudizievoliu003c/titleu003e
+      - name: maintitle
+        value: Controlli pregiudizievoli
+      - name: steptitle
+        value: Controlli pregiudizievoli
+      - name: apiresname
+        value: risorsa
+      - name: endpoint
+        value: http://bpm-manager-business-check-ui-svc.codice-online.svc.cluster.local:8080/codice-bpm-manager-business-check-online
+      - name: enabledeleteproduct
+        value: true
+      - name: wsidentifiers
+        value: msgtest
+      - name: context
+        value: codice-bpm-manager-business-check                
+  - id: codice-upload-documents-online
+    name: Upload Documenti
+    level: 300
+    priority: 35
+    disallowGoBack: false
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.CommonDataModelTransformation"
+      transformation.config: "/etc/gna-transformations/codice-merchant-identification.json"
+    channels:
+      - channel: digital
+        default: true
+        ui:
+          basetemplate: base-template-myposte
+          template: digitalstep-with-analytics
+    properties:
+      - name: titletag
+        value: u003ctitleu003eIDENTIFICAZIONE MERCHANTu003c/titleu003e
+      - name: maintitle
+        value: IDENTIFICAZIONE MERCHANT
+      - name: steptitle
+        value: IDENTIFICAZIONE MERCHANT
+      - name: endpoint
+        value: http://codice-upload-documents-online.codice-online.svc.cluster.local:80/codice-upload-documents-online
+      - name: wsidentifiers
+        value: msgtest                
+  - id: codice-merchant-identification-online
+    name: Identificazione Merchant Online
+    level: 200
+    priority: 30
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.CommonDataModelTransformation"
+      transformation.config: "/etc/gna-transformations/codice-merchant-identification.json"
+    channels:
+      - channel: digital
+        default: true
+        ui:
+          basetemplate: base-template-myposte
+          template: digitalstep-with-analytics
+    properties:
+      - name: titletag
+        value: u003ctitleu003eIDENTIFICAZIONE MERCHANTu003c/titleu003e
+      - name: maintitle
+        value: IDENTIFICAZIONE MERCHANT
+      - name: steptitle
+        value: IDENTIFICAZIONE MERCHANT
+      - name: endpoint
+        value: http://merchant-identification-digital-ui-svc.codice-online.svc.cluster.local:8080/codice-merchant-identification
+      - name: wsidentifiers
+        value: msgtest
+  - id: codice-qav-online
+    name: QAV Online
+    level: 200
+    priority: 30
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.CommonDataModelTransformation"
+      transformation.config: "/etc/gna-transformations/codice-qav-online.json"
+    channels:
+      - channel: digital
+        default: true
+        ui:
+          basetemplate: base-template-myposte
+          template: simplestep
+    properties:
+      - name: titletag
+        value: u003ctitleu003eIDENTIFICAZIONE MERCHANTu003c/titleu003e
+      - name: maintitle
+        value: IDENTIFICAZIONE MERCHANT
+      - name: steptitle
+        value: IDENTIFICAZIONE MERCHANT
+      - name: endpoint
+        value: http://qav-digital-ui.codice-online.svc.cluster.local:80/qavdigitalui
+      - name: wsidentifiers
+        value: msgtest                
+  - id: codice-bpm-manager-business-check-online
+    name: Controlli Pregiudizievoli
+    startupApi: http://bpm-manager-business-check-ms-svc.codice-online.svc.cluster.local:8090/bpmmanager/api/v1/funnels/{{fid}}/steps/{{stepid}}
+    fqdnBpm: http://bpm-manager-business-check-ms-svc.codice-online.svc.cluster.local:8090
+    level: 300
+    priority: 40
+    isBpm: true
+    disallowGoBack: true
+    dependsOn: 
+      - codice-merchant-identification-online
+      - codice-qav-online            
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.CommonDataModelTransformation"
+      transformation.config: "/etc/gna-transformations/codice-bpm-manager-business-check.json"
+    channels:
+      - channel: digital
+        default: true
+        ui:
+          basetemplate: base-template-myposte
+          template: digitalstep-with-analytics
+    properties:
+      - name: titletag
+        value: u003ctitleu003eControlli pregiudizievoliu003c/titleu003e
+      - name: maintitle
+        value: Controlli pregiudizievoli
+      - name: steptitle
+        value: Controlli pregiudizievoli
+      - name: apiresname
+        value: risorsa
+      - name: endpoint
+        value: http://bpm-manager-business-check-ui-svc.codice-online.svc.cluster.local:8080/codice-bpm-manager-business-check-online
+      - name: enabledeleteproduct
+        value: true
+      - name: wsidentifiers
+        value: msgtest
+      - name: context
+        value: codice-bpm-manager-business-check
+  - id: codice-riepilogo-online
+    name: Codice Riepilogo
+    level: 600
+    priority: 60
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.CommonDataModelTransformation"
+      transformation.config: "/etc/gna-transformations/codice-contractualization.json"
+    channels:
+      - channel: digital
+        default: true
+        ui:
+          basetemplate: base-template-myposte
+          template: digitalstep-with-analytics
+    properties:
+      - name: titletag
+        value: u003ctitleu003eCODICE RIEPILOGOu003c/titleu003e
+      - name: maintitle
+        value: CODICE RIEPILOGO
+      - name: steptitle
+        value: CODICE RIEPILOGO
+      - name: endpoint
+        value: http://codice-riepilogo-online.codice-online.svc.cluster.local:80/codiceriepilogoonline
+      - name: wsidentifiers
+        value: msgtest
+  - id: codice-contractualization-online
+    name: Contrattualizzazione
+    level: 600
+    priority: 55
+    gate: true
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.CommonDataModelTransformation"
+      transformation.config: "/etc/gna-transformations/codice-contractualization.json"
+    channels:
+      - channel: digital
+        default: true
+        ui:
+          basetemplate: base-template-myposte
+          template: digitalstep-with-analytics
+    properties:
+      - name: titletag
+        value: u003ctitleu003eCONTRATTUALIZZAZIONEu003c/titleu003e
+      - name: maintitle
+        value: CONTRATTUALIZZAZIONE
+      - name: steptitle
+        value: CONTRATTUALIZZAZIONE
+      - name: endpoint
+        value: http://contractualization-digital-ui.codice-online.svc.cluster.local:80/contractualizationdigitalui
+      - name: wsidentifiers
+        value: msgtest
+  - id: codice-video-identification-online
+    name: Video Identification
+    level: 600
+    priority: 50
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.CommonDataModelTransformation"
+      transformation.config: "/etc/gna-transformations/codice-online-identification.json"
+    channels:
+      - channel: digital
+        default: true
+        ui:
+          basetemplate: base-template-myposte
+          template: digitalstep-with-analytics
+    properties:
+      - name: titletag
+        value: u003ctitleu003eVIDEO RICONOSCIMENTOu003c/titleu003e
+      - name: maintitle
+        value: VIDEO RICONOSCIMENTO
+      - name: steptitle
+        value: VIDEO RICONOSCIMENTO
+      - name: endpoint
+        value: http://video-identification.codice-online.svc.cluster.local:80/videoidentification
+      - name: wsidentifiers
+        value: msgtest
+  - id: codice-bpm-manager-service-activation-online
+    name: Attivazione Prodotto Codice
+    startupApi: http://bpm-manager-service-activation-ms-svc.codice-online.svc.cluster.local:8090/bpmmanager/api/v1/funnels/{{fid}}/steps/{{stepid}}
+    fqdnBpm: http://bpm-manager-service-activation-ms-svc.codice-online.svc.cluster.local:8090
+    level: 800
+    priority: 60
+    isBpm: true
+    gate: true
+    disallowGoBack: true
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.CommonDataModelTransformation"
+      transformation.config: "/etc/gna-transformations/codice-bpm-manager-service-activation.json"
+    channels:
+      - channel: digital
+        default: true
+        ui:
+          basetemplate: base-template-myposte
+          template: digitalstep-with-analytics
+    properties:
+      - name: titletag
+        value: u003ctitleu003eService Activationu003c/titleu003e
+      - name: maintitle
+        value: Service Activation
+      - name: steptitle
+        value: Service Activation
+      - name: apiresname
+        value: risorsa
+      - name: endpoint
+        value: http://bpm-manager-service-activation-ui-svc.codice-online.svc.cluster.local:8080/codice-bpm-manager-service-activation-online
+      - name: enabledeleteproduct
+        value: true
+      - name: wsidentifiers
+        value: msgtest
+      - name: context
+        value: codice-bpm-manager-service-activation
+  - id: fibra-saleability
+    name: Vendibilita
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.CommonDataModelTransformation"
+      transformation.config: "/etc/gna-transformations/fibra-saleability.json"
+    # OPTIONAL , Step Description
+    description: Vendibilita Fibra
+    level: 50
+    priority: 30
+    # CHANNEL CONFIGURATIONS
+    # MANDATORY, Channel Identifier, must be unique
+    # in the step configuration (at least one channel must be configured)
+    channels:
+      - channel: intranet
+        default: true
+        ui:
+          basetemplate: skeleton-template
+          template: simplestep
+      - channel: digital
+        default: false
+        ui:
+          basetemplate: skeleton-template
+          template: simplestep
+    properties:
+      - name: titletag
+        value: u003ctitleu003eSALEABILITYu003c/titleu003e
+      - name: maintitle
+        value: SALEABILITY
+      - name: steptitle
+        value: SALEABILITY
+      - name: endpoint
+        value: http://saleability-ui-svc.fibra.svc.cluster.local:8080/fibra-saleability
+  - id: fibra-customer-identification
+    name: Identificazione Cliente
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.CommonDataModelTransformation"
+      transformation.config: "/etc/gna-transformations/fibra-customer-identification.json"
+    description: Identificazione Cliente
+    level: 100
+    priority: 30
+    channels:
+      - channel: intranet
+        default: true
+        ui:
+          basetemplate: skeleton-template
+          template: simplestep
+      - channel: digital
+        default: false
+        ui:
+          basetemplate: skeleton-template
+          template: simplestep
+    properties:
+      - name: titletag
+        value: u003ctitleu003eCUSTOMER IDENTIFICATIONu003c/titleu003e
+      - name: maintitle
+        value: CUSTOMER IDENTIFICATION
+      - name: steptitle
+        value: CUSTOMER IDENTIFICATION
+      - name: endpoint
+        value: http://customer-identification-ui-svc.fibra.svc.cluster.local:8080/fibra-customer-identification
+  - id: fibra-contractualization
+    name: Contrattualizzazione Cliente
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.CommonDataModelTransformation"
+      transformation.config: "/etc/gna-transformations/fibra-contractualization.json"
+    description: Contrattualizzazione Cliente
+    level: 200
+    priority: 50
+    channels:
+      - channel: intranet
+        default: true
+        ui:
+          basetemplate: skeleton-template
+          template: simplestep
+      - channel: digital
+        default: false
+        ui:
+          basetemplate: skeleton-template
+          template: simplestep
+    properties:
+      - name: titletag
+        value: u003ctitleu003eCUSTOMER CONTRACTUALIZATIONu003c/titleu003e
+      - name: maintitle
+        value: CUSTOMER CONTRACTUALIZATION
+      - name: steptitle
+        value: CUSTOMER CONTRACTUALIZATION
+      - name: endpoint
+        value: http://contractualization-ui-svc.fibra.svc.cluster.local:8080/fibra-contractualization 
+  - id: fibra-bpm-manager-business-postepay
+    name: Attivazione Prodotto Fibra
+    startupApi: http://bpm-manager-business-postepay-ms-svc.fibra.svc.cluster.local:8090/bpmmanager/api/v1/funnels/{{fid}}/steps/{{stepid}}
+    fqdnBpm: http://bpm-manager-business-postepay-ms-svc.fibra.svc.cluster.local:8090 
+    level: 300
+    priority: 50
+    isBpm: true
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.CommonDataModelTransformation"
+      transformation.config: "/etc/gna-transformations/fibra-bpm-manager-business-postepay.json"
+    properties:
+      - name: titletag
+        value: u003ctitleu003eService Activationu003c/titleu003e
+      - name: maintitle
+        value: Service Activation
+      - name: steptitle
+        value: Service Activation
+      - name: apiresname
+        value: risorsa
+      - name: endpoint
+        value: http://bpm-manager-business-postepay-ms-svc.fibra.svc.cluster.local:8080/fibra-bpm-manager-business-postepay 
+      - name: enabledeleteproduct
+        value: true
+      - name: wsidentifiers
+        value: msgtest
+      - name: context
+        value: bpm-manager-business-postepay
+  - id: fibra-post-vendita
+    name: Identificazione Asset Cliente
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.CommonDataModelTransformation"
+      transformation.config: "/etc/gna-transformations/fibra-post-vendita.json"
+    # OPTIONAL , Step Description
+    description: Identificazione Asset Fibra Post Vendita
+    level: 50
+    priority: 30
+    # CHANNEL CONFIGURATIONS
+    # MANDATORY, Channel Identifier, must be unique
+    # in the step configuration (at least one channel must be configured)
+    channels:
+      - channel: intranet
+        default: true
+        ui:
+          basetemplate: skeleton-template
+          template: simplestep
+      - channel: digital
+        default: false
+        ui:
+          basetemplate: skeleton-template
+          template: simplestep
+    properties:
+      - name: titletag
+        value: u003ctitleu003eFIBRA - POST VENDITAu003c/titleu003e
+      - name: maintitle
+        value: FIBRA POST VENDITA
+      - name: steptitle
+        value: FIBRA POST VENDITA
+      - name: endpoint
+        value: http://fibra-post-vendita-ui-svc.fibra.svc.cluster.local:8080/fibra-post-vendita
+  - id: fibra-bpm-postvendita
+    name: Variazione Post Vendita Prodotto Fibra
+    startupApi: http://bpm-manager-business-postvendita-ms-svc.fibra.svc.cluster.local:8090/bpmmanager/api/v1/funnels/{{fid}}/steps/{{stepid}}
+    fqdnBpm: http://bpm-manager-business-postvendita-ms-svc.fibra.svc.cluster.local:8090
+    level: 300
+    priority: 50
+    isBpm: true
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.CommonDataModelTransformation"
+      transformation.config: "/etc/gna-transformations/fibra-bpm-fibra-postvendita.json"
+    properties:
+      - name: titletag
+        value: u003ctitleu003eService Post Venditau003c/titleu003e
+      - name: maintitle
+        value: Service Post Vendita
+      - name: steptitle
+        value: Service Post Vendita
+      - name: apiresname
+        value: risorsa
+      - name: endpoint
+        value: http://bpm-manager-business-postvendita-ms-svc.fibra.svc.cluster.local:8090/fibra-bpm-manager-business-postepay
+      - name: enabledeleteproduct
+        value: true
+      - name: wsidentifiers
+        value: msgtest
+      - name: context
+        value: bpm-fibra-postvendita
+  - id: digital-ecobonus
+    name: digital-ecobonus
+    description: digital-ecobonus
+    level: 800
+    priority: 50
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.FeuTransformation"
+    # CHANNEL CONFIGURATIONS
+    # MANDATORY, Channel Identifier, must be unique
+    # in the step configuration (at least one channel must be configured)
+    channels:
+      - channel: up
+        # MANDATORY, Default channel if none is present
+        default: true
+        # UI Config Section (per channel)
+        ui:
+          # OPTIONAL , base template for this step
+          # (default base template must be handled by the funnel UI)
+          basetemplate: minimal-template
+          # MANDATORY, template for this step
+          template: simplestep
+      - channel: digital
+        default: false
+        ui:
+          basetemplate: base-template-digital
+          template: simplestep
+    # OPTIONAL , array of additional properties
+    properties:
+      - name: titletag
+        value: u003ctitleu003eEcobonusu003c/titleu003e
+      - name: maintitle
+        value: Ecobonus
+      - name: steptitle
+        value: Ecobonus
+      # step base URI
+      - name: endpoint
+        value: http://ecobonus-ui.ecobonus.svc.cluster.local 
+  - id: digital-ecobonus-contrattualizzazione
+    name: digital-ecobonus-contrattualizzazione
+    description: digital-ecobonus-contrattualizzazione
+    level: 810
+    priority: 50
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.FeuTransformation"
+    # CHANNEL CONFIGURATIONS
+    # MANDATORY, Channel Identifier, must be unique
+    # in the step configuration (at least one channel must be configured)
+    channels:
+      - channel: up
+        # MANDATORY, Default channel if none is present
+        default: true
+        # UI Config Section (per channel)
+        ui:
+          # OPTIONAL , base template for this step
+          # (default base template must be handled by the funnel UI)
+          basetemplate: minimal-template
+          # MANDATORY, template for this step
+          template: simplestep
+      - channel: digital
+        default: false
+        ui:
+          basetemplate: base-template-digital
+          template: simplestep
+    # OPTIONAL , array of additional properties
+    properties:
+      - name: titletag
+        value: u003ctitleu003eEcobonusu003c/titleu003e
+      - name: maintitle
+        value: Ecobonus
+      - name: steptitle
+        value: Ecobonus
+      # step base URI
+      - name: endpoint
+        value: http://ecobonus-contrattualizzazione.ecobonus.svc.cluster.local 
+  - id: digital-ecobonus-esito
+    name: digital-ecobonus-esito
+    description: digital-ecobonus-esito
+    level: 820
+    priority: 50
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.FeuTransformation"
+    # CHANNEL CONFIGURATIONS
+    # MANDATORY, Channel Identifier, must be unique
+    # in the step configuration (at least one channel must be configured)
+    channels:
+      - channel: up
+        # MANDATORY, Default channel if none is present
+        default: true
+        # UI Config Section (per channel)
+        ui:
+          # OPTIONAL , base template for this step
+          # (default base template must be handled by the funnel UI)
+          basetemplate: minimal-template
+          # MANDATORY, template for this step
+          template: simplestep
+      - channel: digital
+        default: false
+        ui:
+          basetemplate: base-template-digital
+          template: simplestep
+    # OPTIONAL , array of additional properties
+    properties:
+      - name: titletag
+        value: u003ctitleu003eEcobonusu003c/titleu003e
+      - name: maintitle
+        value: Ecobonus
+      - name: steptitle
+        value: Ecobonus
+      # step base URI
+      - name: endpoint
+        value: http://ecobonus-esito.ecobonus.svc.cluster.local
+  - id: digital-ecobonus-retail
+    name: digital-ecobonus-retail
+    description: digital-ecobonus-retail
+    level: 800
+    priority: 50
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.FeuTransformation"
+    # CHANNEL CONFIGURATIONS
+    # MANDATORY, Channel Identifier, must be unique
+    # in the step configuration (at least one channel must be configured)
+    channels:
+      - channel: up
+        # MANDATORY, Default channel if none is present
+        default: true
+        # UI Config Section (per channel)
+        ui:
+          # OPTIONAL , base template for this step
+          # (default base template must be handled by the funnel UI)
+          basetemplate: minimal-template
+          # MANDATORY, template for this step
+          template: simplestep
+      - channel: digital
+        default: false
+        ui:
+          basetemplate: base-template-digital
+          template: simplestep
+    # OPTIONAL , array of additional properties
+    properties:
+      - name: titletag
+        value: u003ctitleu003eEcobonusu003c/titleu003e
+      - name: maintitle
+        value: Ecobonus
+      - name: steptitle
+        value: Ecobonus
+      # step base URI
+      - name: endpoint
+        value: http://ecobonus-ui-pf.ecobonus.svc.cluster.local
+  - id: digital-ecobonus-contrattualizzazione-retail
+    name: digital-ecobonus-contrattualizzazione-retail
+    description: digital-ecobonus-contrattualizzazione-retail
+    level: 810
+    priority: 50
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.FeuTransformation"
+    # CHANNEL CONFIGURATIONS
+    # MANDATORY, Channel Identifier, must be unique
+    # in the step configuration (at least one channel must be configured)
+    channels:
+      - channel: up
+        # MANDATORY, Default channel if none is present
+        default: true
+        # UI Config Section (per channel)
+        ui:
+          # OPTIONAL , base template for this step
+          # (default base template must be handled by the funnel UI)
+          basetemplate: minimal-template
+          # MANDATORY, template for this step
+          template: simplestep
+      - channel: digital
+        default: false
+        ui:
+          basetemplate: minimal-template
+          template: simplestep
+    # OPTIONAL , array of additional properties
+    properties:
+      - name: titletag
+        value: u003ctitleu003eEcobonusu003c/titleu003e
+      - name: maintitle
+        value: Ecobonus
+      - name: steptitle
+        value: Ecobonus
+      # step base URI
+      - name: endpoint
+        value: http://ecobonus-contrattualizzazione-pf.ecobonus.svc.cluster.local
+  - id: digital-ecobonus-esito-retail
+    name: digital-ecobonus-esito-retail
+    description: digital-ecobonus-esito-retail
+    level: 820
+    priority: 50
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.FeuTransformation"
+    # CHANNEL CONFIGURATIONS
+    # MANDATORY, Channel Identifier, must be unique
+    # in the step configuration (at least one channel must be configured)
+    channels:
+      - channel: up
+        # MANDATORY, Default channel if none is present
+        default: true
+        # UI Config Section (per channel)
+        ui:
+          # OPTIONAL , base template for this step
+          # (default base template must be handled by the funnel UI)
+          basetemplate: minimal-template
+          # MANDATORY, template for this step
+          template: simplestep
+      - channel: digital
+        default: false
+        ui:
+          basetemplate: minimal-template
+          template: simplestep
+    # OPTIONAL , array of additional properties
+    properties:
+      - name: titletag
+        value: u003ctitleu003eEcobonusu003c/titleu003e
+      - name: maintitle
+        value: Ecobonus
+      - name: steptitle
+        value: Ecobonus
+      # step base URI
+      - name: endpoint
+        value: http://ecobonus-esito-pf.ecobonus.svc.cluster.local
+  ### PACO STEPS
+  - id: browser-consulenze
+    name: feu-paco-step-browserconsulenze
+    level: 8
+    priority: 40
+    channels:
+      - channel: dasretail
+        default: true
+        ui:
+          basetemplate: base-template-digital
+          template: simplestep-retail
+    properties:
+      - name: titletag
+        value: u003ctitleu003eConsulenzeu003c/titleu003e
+      - name: maintitle
+        value: Consulenze
+      - name: steptitle
+        value: Consulenze
+      - name: endpoint
+        value: http://feu-paco-step-browserconsulenze.paco-online.svc.cluster.local:80/feu-paco-step-browserconsulenze 
+      - name: enabledeleteproduct
+        value: true
+      - name: federation-bar-right-endpoint-digital
+        value: http://feu-api-online-initiator.paco-online.svc.cluster.local:80/jod-api-funnel-orchestrator-proxy/v1/funnel/federation-bar-right                
+  - id: gestione-proposte
+    name: feu-paco-step-gestione-proposte
+    level: 8
+    priority: 40
+    channels:
+      - channel: dasretail
+        default: true
+        ui:
+          basetemplate: base-template-digital
+          template: simplestep-retail
+    properties:
+      - name: titletag
+        value: u003ctitleu003eGestione Proposteu003c/titleu003e
+      - name: maintitle
+        value: Gestione Proposte
+      - name: steptitle
+        value: Gestione Proposte
+      - name: endpoint
+        value: http://feu-paco-step-gestione-proposte.paco-online.svc.cluster.local:80/feu-paco-step-gestione-proposte 
+      - name: enabledeleteproduct
+        value: true
+      - name: federation-bar-right-endpoint-digital
+        value: http://feu-api-online-initiator.paco-online.svc.cluster.local:80/jod-api-funnel-orchestrator-proxy/v1/funnel/federation-bar-right                
+  - id: compila
+    name: Compila
+    level: 200
+    priority: 50   
+    # nataraja (funnel orchestrator) uses gna to implements FIF/FOF
+    # each step defines input filter, input "insert transformation", output filter
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.CommonDataModelTransformation"
+      transformation.config: "/etc/gna-transformations/feu-paco-step-compila-documenti-transformation-config.json"       
+    channels:
+      - channel: dasretail
+        default: true
+        ui:
+          basetemplate: base-template-retail
+          template: simplestep-retail
+    properties:
+      - name: titletag
+        value: u003ctitleu003eFEU DAS IDENTIFICATIONu003c/titleu003e
+      - name: maintitle
+        value: Feu IDENTIFICATION Step for DAS
+      - name: steptitle
+        value: Feu IDENTIFICATION Step for DAS
+      - name: endpoint
+        value: http://feu-paco-step-compila-documenti.paco-online.svc.cluster.local:80/feu-paco-step-compila-documenti 
+      - name: enabledeleteproduct
+        value: true
+      - name: breadcrumb-endpoint-digital
+        value: http://feu-api-online-initiator.paco-online.svc.cluster.local:80/jod-api-funnel-orchestrator-proxy/v1/funnel/paco/breadcrumb
+      - name: federation-bar-right-endpoint-digital
+        value: http://feu-api-online-initiator.paco-online.svc.cluster.local:80/jod-api-funnel-orchestrator-proxy/v1/funnel/federation-bar-right
+  - id: configura-riepilogo
+    name: feu-paco-step-completa-dati-prodotto
+    level: 200
+    priority: 45   
+    # nataraja (funnel orchestrator) uses gna to implements FIF/FOF
+    # each step defines input filter, input "insert transformation", output filter
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.CommonDataModelTransformation"
+      transformation.config: "/etc/gna-transformations/feu-paco-step-completa-dati-prodotto-transformation-config.json"    
+    channels:
+      - channel: dasretail
+        default: true
+        ui:
+          basetemplate: base-template-retail
+          template: simplestep-retail
+    properties:
+      - name: titletag
+        value: u003ctitleu003eConfigura Riepilogou003c/titleu003e
+      - name: maintitle
+        value: Configura Riepilogo
+      - name: steptitle
+        value: Configura Riepilogo
+      - name: endpoint
+        value: http://feu-paco-step-completa-dati-prodotto.paco-online.svc.cluster.local:80/feu-paco-step-completa-dati-prodotto 
+      - name: enabledeleteproduct
+        value: true
+      - name: breadcrumb-endpoint-digital
+        value: http://feu-api-online-initiator.paco-online.svc.cluster.local:80/jod-api-funnel-orchestrator-proxy/v1/funnel/paco/breadcrumb
+      - name: federation-bar-right-endpoint-digital
+        value: http://feu-api-online-initiator.paco-online.svc.cluster.local:80/jod-api-funnel-orchestrator-proxy/v1/funnel/federation-bar-right
+  - id: configura-polizza
+    name: Configura Polizza
+    level: 200
+    priority: 40
+    # nataraja (funnel orchestrator) uses gna to implements FIF/FOF
+    # each step defines input filter, input "insert transformation", output filter
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.FilteredFeuTransformation"
+      transformation.config: "/etc/gna-transformations/feu-paco-step-configura-polizza-transformation-config.json"    
+    channels:
+      - channel: dasretail
+        default: true
+        ui:
+          basetemplate: base-template-retail
+          template: simplestep-retail
+    properties:
+      - name: titletag
+        value: u003ctitleu003eConfigura Polizzau003c/titleu003e
+      - name: maintitle
+        value: Configura Polizza
+      - name: steptitle
+        value: Configura Polizza
+      - name: endpoint
+        value: http://feu-paco-step-configura-polizza-frontend.paco-online.svc.cluster.local:80/feu-paco-step-configura-polizza
+      - name: enabledeleteproduct
+        value: true
+      - name: breadcrumb-endpoint-digital
+        value: http://feu-api-online-initiator.paco-online.svc.cluster.local:80/jod-api-funnel-orchestrator-proxy/v1/funnel/paco/breadcrumb
+      - name: federation-bar-right-endpoint-digital
+        value: http://feu-api-online-initiator.paco-online.svc.cluster.local:80/jod-api-funnel-orchestrator-proxy/v1/funnel/federation-bar-right       
+  - id: configura-fondo
+    name: Configura Fondo
+    level: 200
+    priority: 43       
+    # nataraja (funnel orchestrator) uses gna to implements FIF/FOF
+    # each step defines input filter, input "insert transformation", output filter
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.CommonDataModelTransformation"
+      transformation.config: "/etc/gna-transformations/feu-paco-step-configura-fondo-transformation-config.json"    
+    channels:
+      - channel: dasretail
+        default: true
+        ui:
+          basetemplate: base-template-retail
+          template: simplestep-retail
+    properties:
+      - name: titletag
+        value: u003ctitleu003eConfigura Fondou003c/titleu003e
+      - name: maintitle
+        value: Configura Fondo
+      - name: steptitle
+        value: Configura Fondo
+      - name: endpoint
+        value: http://feu-paco-step-configura-fondo.paco-online.svc.cluster.local:80/feu-paco-step-configura-fondo 
+      - name: enabledeleteproduct
+        value: true
+      - name: breadcrumb-endpoint-digital
+        value: http://feu-api-online-initiator.paco-online.svc.cluster.local:80/jod-api-funnel-orchestrator-proxy/v1/funnel/paco/breadcrumb
+      - name: federation-bar-right-endpoint-digital
+        value: http://feu-api-online-initiator.paco-online.svc.cluster.local:80/jod-api-funnel-orchestrator-proxy/v1/funnel/federation-bar-right
+  - id: pre-digital-signature
+    name: Pre Firma
+    level: 600
+    priority: 60   
+    # nataraja (funnel orchestrator) uses gna to implements FIF/FOF
+    # each step defines input filter, input "insert transformation", output filter
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.CommonDataModelTransformation"
+      transformation.config: "/etc/gna-transformations/digital-signature.json"       
+    channels:
+      - channel: dasretail
+        default: true
+        ui:
+          basetemplate: base-template-retail
+          template: simplestep-retail
+    properties:
+      - name: titletag
+        value: u003ctitleu003eOpportunitu0026agrave; per teu003c/titleu003e
+      - name: maintitle
+        value: Feu Pre Firma
+      - name: steptitle
+        value: Feu Pre Firma
+      - name: endpoint
+        value: http://pre-digital-signature.paco-online.svc.cluster.local:80/pre-digital-signature
+      - name: breadcrumb-endpoint-digital
+        value: http://feu-api-online-initiator.paco-online.svc.cluster.local:80/jod-api-funnel-orchestrator-proxy/v1/funnel/paco/breadcrumb
+      - name: federation-bar-right-endpoint-digital
+        value: http://feu-api-online-initiator.paco-online.svc.cluster.local:80/jod-api-funnel-orchestrator-proxy/v1/funnel/federation-bar-right
+  - id: digital-signature-online
+    name: Contractualization Digital Signature Step
+    level: 600
+    priority: 55   
+    # nataraja (funnel orchestrator) uses gna to implements FIF/FOF
+    # each step defines input filter, input "insert transformation", output filter
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.CommonDataModelTransformation"
+      transformation.config: "/etc/gna-transformations/digital-signature.json"    
+    channels:
+      - channel: dasretail
+        default: true
+        ui:
+          basetemplate: base-template-retail
+          template: simplestep-retail
+    properties:
+      - name: titletag
+        value: u003ctitleu003eDigital Signatureu003c/titleu003e
+      - name: maintitle
+        value: Digital Signature
+      - name: steptitle
+        value: Digital Signature
+      - name: endpoint
+        value: http://digital-signature-ui.paco-online.svc.cluster.local:80/digital-signature-ui    
+      - name: enabledeleteproduct
+        value: true
+      - name: breadcrumb-endpoint-digital
+        value: http://feu-api-online-initiator.paco-online.svc.cluster.local:80/jod-api-funnel-orchestrator-proxy/v1/funnel/paco/breadcrumb
+      - name: federation-bar-right-endpoint-digital
+        value: http://feu-api-online-initiator.paco-online.svc.cluster.local:80/jod-api-funnel-orchestrator-proxy/v1/funnel/federation-bar-right         
+  - id: autorizzazione-pagamento
+    name: Autorizzazione Pagamento
+    level: 600
+    priority: 50   
+    # nataraja (funnel orchestrator) uses gna to implements FIF/FOF
+    # each step defines input filter, input "insert transformation", output filter
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.CommonDataModelTransformation"
+      transformation.config: "/etc/gna-transformations/feu-paco-step-pagamento-transformation-config.json"  
+    channels:
+      - channel: dasretail
+        default: true
+        ui:
+          basetemplate: base-template-retail
+          template: simplestep-retail
+    properties:
+      - name: titletag
+        value: u003ctitleu003eAutorizzazione Pagamentou003c/titleu003e
+      - name: maintitle
+        value: Autorizzazione Pagamento
+      - name: steptitle
+        value: Autorizzazione Pagamento
+      - name: endpoint
+        value: http://feu-paco-step-pagamento.paco-online.svc.cluster.local:80/feu-paco-step-pagamento 
+      - name: enabledeleteproduct
+        value: true
+      - name: breadcrumb-endpoint-digital
+        value: http://feu-api-online-initiator.paco-online.svc.cluster.local:80/jod-api-funnel-orchestrator-proxy/v1/funnel/paco/breadcrumb
+      - name: federation-bar-right-endpoint-digital
+        value: http://feu-api-online-initiator.paco-online.svc.cluster.local:80/jod-api-funnel-orchestrator-proxy/v1/funnel/federation-bar-right
+  - id: adeguataverifica
+    name: adeguataverifica
+    level: 200
+    priority: 35
+    disallowGoBack: true
+    dirtyDataEndpoint: /adeguataverifica/client
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.GenericStepTransformation"
+      transformation.config: "/etc/gna-transformations/qav-transformation-config.json"
+    channels:
+      - channel: dasretail
+        default: true
+        ui:
+          basetemplate: base-template-retail
+          template: simplestep-retail
+    properties:
+      - name: titletag
+        value: u003ctitleu003eOpportunitu0026agrave; per teu003c/titleu003e
+      - name: maintitle
+        value: QAV
+      - name: steptitle
+        value: QAV
+      - name: endpoint
+        value: http://feu-paco-step-adeguataverifica.paco-online.svc.cluster.local:8080/adeguataverifica/client
+      - name: enabledeleteproduct
+        value: true
+      - name: wsidentifiers
+        value: msgtest
+      - name: breadcrumb-endpoint-digital
+        value: http://feu-api-online-initiator.paco-online.svc.cluster.local:80/jod-api-funnel-orchestrator-proxy/v1/funnel/paco/breadcrumb
+      - name: federation-bar-right-endpoint-digital
+        value: http://feu-api-online-initiator.paco-online.svc.cluster.local:80/jod-api-funnel-orchestrator-proxy/v1/funnel/federation-bar-right  
+  - id: mifid-digital-ui
+    name: Questionario MiFID
+    level: 600
+    priority: 50   
+    # nataraja (funnel orchestrator) uses gna to implements FIF/FOF
+    # each step defines input filter, input "insert transformation", output filter
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.CommonDataModelTransformation"
+      transformation.config: "/etc/gna-transformations/feu-paco-step-pagamento-transformation-config.json"  
+    channels:
+      - channel: dasretail
+        default: true
+        ui:
+          basetemplate: base-template-digital
+          template: simplestep
+    properties:
+      - name: titletag
+        value: u003ctitleu003eQuestionario MiFIDu003c/titleu003e
+      - name: maintitle
+        value: Questionario MiFID
+      - name: steptitle
+        value: Questionario MiFID
+      - name: endpoint
+        value: http://feu-step-mifid.paco-online.svc.cluster.local:80/feu-step-mifid 
+      - name: enabledeleteproduct
+        value: true
+  - id: upload-documents
+    name: paco-documents-upload-digital-ui
+    level: 8
+    priority: 40
+    # nataraja (funnel orchestrator) uses gna to implements FIF/FOF
+    # each step defines input filter, input "insert transformation", output filter
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.CommonDataModelTransformation"
+      transformation.config: "/etc/gna-transformations/paco-documents-upload-digital-ui-transformation-config.json"
+    channels:
+      - channel: dasretail
+        default: true
+        ui:
+          basetemplate: base-template-digital
+          template: simplestep
+    properties:
+      - name: titletag
+        value: u003ctitleu003eOpportunitu0026agrave; per teu003c/titleu003e
+      - name: maintitle
+        value: Upload Documents
+      - name: steptitle
+        value: Upload Documents
+      - name: endpoint
+        value: http://paco-documents-upload-digital-ui.paco-online.svc.cluster.local:80/paco-documents-upload-digital-ui
+      - name: enabledeleteproduct
+        value: true
+  - id: archiviazionedossiers
+    name: archiviazionedossiers
+    startupApi: http://bpm-postel-archive-svc.feu-bpm.svc.cluster.local:8090/bpm/api/v1/processes/funnels/{{fid}}/steps/{{stepid }}
+    fqdnBpm: http://bpm-postel-archive-svc.feu-bpm.svc.cluster.local:8090
+    level: 900
+    # step FEU BPM OAD 120347
+    priority: 1
+    isBpm: true
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.SignatureCDMTransformation"
+      transformation.config: "/etc/gna-transformations/archiviazionedossiers.json"                
+  - id: digital-ecobonus-business
+    name: digital-ecobonus-business
+    description: digital-ecobonus-business
+    level: 800
+    priority: 50
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.FeuTransformation"
+    # CHANNEL CONFIGURATIONS
+    # MANDATORY, Channel Identifier, must be unique
+    # in the step configuration (at least one channel must be configured)
+    channels:
+      - channel: up
+        # MANDATORY, Default channel if none is present
+        default: true
+        # UI Config Section (per channel)
+        ui:
+          # OPTIONAL , base template for this step
+          # (default base template must be handled by the funnel UI)
+          basetemplate: minimal-template
+          # MANDATORY, template for this step
+          template: simplestep
+      - channel: digital
+        default: false
+        ui:
+          basetemplate: base-template-digital
+          template: simplestep
+    # OPTIONAL , array of additional properties
+    properties:
+      - name: titletag
+        value: u003ctitleu003eEcobonusu003c/titleu003e
+      - name: maintitle
+        value: Ecobonus
+      - name: steptitle
+        value: Ecobonus
+      # step base URI
+      - name: endpoint
+        value: http://ecobonus-ui-business.ecobonus.svc.cluster.local 
+  - id: digital-ecobonus-contrattualizzazione-business
+    name: digital-ecobonus-contrattualizzazione-business
+    description: digital-ecobonus-contrattualizzazione-business
+    level: 810
+    priority: 50
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.FeuTransformation"
+    # CHANNEL CONFIGURATIONS
+    # MANDATORY, Channel Identifier, must be unique
+    # in the step configuration (at least one channel must be configured)
+    channels:
+      - channel: up
+        # MANDATORY, Default channel if none is present
+        default: true
+        # UI Config Section (per channel)
+        ui:
+          # OPTIONAL , base template for this step
+          # (default base template must be handled by the funnel UI)
+          basetemplate: minimal-template
+          # MANDATORY, template for this step
+          template: simplestep
+      - channel: digital
+        default: false
+        ui:
+          basetemplate: minimal-template
+          template: simplestep
+    # OPTIONAL , array of additional properties
+    properties:
+      - name: titletag
+        value: u003ctitleu003eEcobonusu003c/titleu003e
+      - name: maintitle
+        value: Ecobonus
+      - name: steptitle
+        value: Ecobonus
+      # step base URI
+      - name: endpoint
+        value: http://ecobonus-contrattualizzazione-business.ecobonus.svc.cluster.local 
+  - id: digital-ecobonus-esito-business
+    name: digital-ecobonus-esito-business
+    description: digital-ecobonus-esito-business
+    level: 820
+    priority: 50
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.FeuTransformation"
+    # CHANNEL CONFIGURATIONS
+    # MANDATORY, Channel Identifier, must be unique
+    # in the step configuration (at least one channel must be configured)
+    channels:
+      - channel: up
+        # MANDATORY, Default channel if none is present
+        default: true
+        # UI Config Section (per channel)
+        ui:
+          # OPTIONAL , base template for this step
+          # (default base template must be handled by the funnel UI)
+          basetemplate: minimal-template
+          # MANDATORY, template for this step
+          template: simplestep
+      - channel: digital
+        default: false
+        ui:
+          basetemplate: minimal-template
+          template: simplestep
+    # OPTIONAL , array of additional properties
+    properties:
+      - name: titletag
+        value: u003ctitleu003eEcobonusu003c/titleu003e
+      - name: maintitle
+        value: Ecobonus
+      - name: steptitle
+        value: Ecobonus
+      # step base URI
+      - name: endpoint
+        value: http://ecobonus-esito-business.ecobonus.svc.cluster.local
+  - id: fibra-anagraphic-management
+    name: Modifica Anagrafica Cliente
+    gna:
+      transformation: "it.poste.feu.fo.fis.infrastructure.gna.trasformer.CommonDataModelTransformation"
+      transformation.config: "/etc/gna-transformations/fibra-anagraphic-management.json"
+    # OPTIONAL , Step Description
+    description: Identificazione Asset Fibra Post Vendita
+    level: 50
+    priority: 30
+    # CHANNEL CONFIGURATIONS
+    # MANDATORY, Channel Identifier, must be unique
+    # in the step configuration (at least one channel must be configured)
+    channels:
+      - channel: intranet
+        default: true
+        ui:
+          basetemplate: skeleton-template
+          template: simplestep
+      - channel: digital
+        default: false
+        ui:
+          basetemplate: skeleton-template
+          template: simplestep
+    properties:
+      - name: titletag
+        value: u003ctitleu003eFIBRA - ANAGRAPHIC MANAGEMENTu003c/titleu003e
+      - name: maintitle
+        value: FIBRA ANAGRAPHIC MANAGEMENT
+      - name: steptitle
+        value: FIBRA ANAGRAPHIC MANAGEMENT
+      - name: endpoint
+        value: http://fibra-post-vendita-ui-svc.fibra.svc.cluster.local:8080/fibra-post-vendita
